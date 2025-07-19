@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>MaIAnMath - Simulador de Matemáticas</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: auto; padding: 20px; background-color: #f5f5f5; }
+    header { text-align: center; margin-bottom: 30px; }
+    header img { max-width: 150px; margin-bottom: 10px; }
+    header h1 { margin: 0; font-size: 2em; color: #333; }
+    header p { font-size: 1em; color: #555; }
+    .question { margin-bottom: 20px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
+    .result { font-weight: bold; font-size: 1.2em; margin-top: 20px; text-align: center; }
+    button { padding: 10px 15px; margin-top: 10px; font-weight: bold; cursor: pointer; border-radius: 5px; border: none; background-color: #007bff; color: white; }
+    button:hover { background-color: #0056b3; }
+    .hidden { display: none; }
+    .correct { background-color: #d4edda; border-left: 5px solid #28a745; }
+    .incorrect { background-color: #f8d7da; border-left: 5px solid #dc3545; }
+  </style>
+</head>
+<body>
+  <header>
+    <!-- Se recomienda tener la imagen en la misma carpeta que el archivo HTML -->
+    <img src="MaIA.webp" alt="Logo MaIAnMath">
+    <h1>MaIAnMath</h1>
+    <p>Simulador Diagnóstico de Matemáticas<br>Selecciona tu nivel de dificultad y demuestra lo que sabes.</p>
+  </header>
+
+  <label for="difficulty">Selecciona la dificultad:</label>
+  <select id="difficulty">
+    <option value="easy">Fácil</option>
+    <option value="medium">Intermedio</option>
+    <option value="hard">Difícil</option>
+    <option value="veryhard">Muy Difícil</option>
+  </select>
+  <button onclick="loadTest()">Iniciar Test</button>
+
+  <form id="testForm" class="hidden" onsubmit="return gradeTest(event)">
+    <div id="questions"></div>
+    <button type="submit">Enviar Respuestas</button>
+  </form>
+  <div class="result" id="result"></div>
+
+  <script>
+    const tests = {
+      easy: [
+        { q: '¿Cuánto es 3 + 5?', options: ['5', '7', '8', '10'], answer: 2 },
+        { q: '¿Cuánto es 12 - 4?', options: ['6', '8', '10', '12'], answer: 1 },
+        { q: '¿Cuánto es 5 x 2?', options: ['7', '10', '12', '15'], answer: 1 },
+        { q: '¿Cuánto es 16 ÷ 4?', options: ['2', '3', '4', '5'], answer: 2 },
+        { q: '¿Cuál es el doble de 6?', options: ['10', '12', '14', '16'], answer: 1 },
+        { q: '¿Cuánto es 9 + 3?', options: ['11', '12', '13', '14'], answer: 1 },
+        { q: '¿Cuánto es 10 - 7?', options: ['2', '3', '4', '5'], answer: 1 },
+        { q: '¿Cuál es el triple de 3?', options: ['6', '9', '12', '15'], answer: 1 },
+        { q: '¿Cuánto es 2 x 6?', options: ['10', '11', '12', '13'], answer: 2 },
+        { q: '¿Cuánto es 18 ÷ 3?', options: ['5', '6', '7', '8'], answer: 1 }
+      ],
+      medium: [
+        { q: '¿Cuánto es 15 x 2?', options: ['20', '25', '30', '35'], answer: 2 },
+        { q: '¿Cuánto es 100 ÷ 5?', options: ['15', '20', '25', '30'], answer: 1 },
+        { q: '¿Cuánto es 12²?', options: ['124', '134', '144', '154'], answer: 2 },
+        { q: '¿Cuánto es la raíz cuadrada de 81?', options: ['7', '8', '9', '10'], answer: 2 },
+        { q: '¿Cuánto es 11 x 11?', options: ['111', '121', '131', '141'], answer: 1 },
+        { q: '¿Cuánto es 10 x 10?', options: ['100', '110', '120', '130'], answer: 0 },
+        { q: '¿Cuál es el resultado de 6 x 7?', options: ['42', '46', '49', '52'], answer: 0 },
+        { q: '¿Cuánto es 64 ÷ 8?', options: ['6', '7', '8', '9'], answer: 2 },
+        { q: '¿Cuánto es 9 x 9?', options: ['72', '81', '90', '99'], answer: 1 },
+        { q: '¿Cuánto es 14 + 16?', options: ['28', '30', '32', '34'], answer: 1 }
+      ],
+      hard: [
+        { q: 'Resuelve: 2x = 18', options: ['7', '8', '9', '10'], answer: 2 },
+        { q: '¿Qué número falta? 3, 6, 9, ?, 15', options: ['10', '11', '12', '13'], answer: 2 },
+        { q: '¿Cuánto es 5²?', options: ['10', '15', '20', '25'], answer: 3 },
+        { q: '¿Cuánto es (2+3) x 4?', options: ['16', '20', '22', '24'], answer: 1 },
+        { q: '¿Cuánto es 81 ÷ 9?', options: ['8', '9', '10', '11'], answer: 1 },
+        { q: '¿Cuál es la raíz cuadrada de 121?', options: ['9', '10', '11', '12'], answer: 2 },
+        { q: '¿Cuál es el resultado de 3³?', options: ['9', '18', '27', '36'], answer: 2 },
+        { q: '¿Cuánto es 50% de 60?', options: ['25', '30', '35', '40'], answer: 1 },
+        { q: '¿Cuánto es ¼ de 100?', options: ['20', '25', '30', '35'], answer: 1 },
+        { q: '¿Qué número sigue? 2, 4, 8, 16, ?', options: ['20', '24', '30', '32'], answer: 3 }
+      ],
+      veryhard: [
+        { q: 'Resuelve: (3x - 2) = 10, ¿cuánto vale x?', options: ['4', '5', '6', '7'], answer: 0 },
+        { q: 'Si f(x) = 2x + 1, ¿cuánto es f(3)?', options: ['6', '7', '8', '9'], answer: 1 },
+        { q: '¿Cuál es la pendiente de la recta y = 3x + 2?', options: ['2', '3', '4', '5'], answer: 1 },
+        { q: '¿Factoriza: x² - 9?', options: ['(x+3)(x-3)', '(x-3)(x-3)', '(x+9)(x-1)', '(x+3)(x+3)'], answer: 0 },
+        { q: '¿Cuánto es log₁₀(100)?', options: ['1', '2', '3', '4'], answer: 1 },
+        { q: 'Resuelve: x² = 49', options: ['5', '6', '7', '8'], answer: 2 },
+        { q: '¿Resultado de 2(x + 3) = 14?', options: ['3', '4', '5', '6'], answer: 1 },
+        { q: 'Resuelve el sistema: x + y = 10, x - y = 2', options: ['x=6, y=4', 'x=5, y=5', 'x=4, y=6', 'x=7, y=3'], answer: 0 },
+        { q: '¿Cuál es el discriminante de x² - 4x + 4 = 0?', options: ['0', '4', '8', '16'], answer: 0 },
+        { q: '¿Cuál es el valor absoluto de -12?', options: ['-12', '0', '12', '24'], answer: 2 }
+      ]
+    };
+
+    function loadTest() {
+      const difficulty = document.getElementById('difficulty').value;
+      const questions = tests[difficulty];
+      const container = document.getElementById('questions');
+      const form = document.getElementById('testForm');
+      container.innerHTML = '';
+      
+      // Limpiar clases de calificación anteriores
+      const allQuestionDivs = document.querySelectorAll('.question');
+      allQuestionDivs.forEach(div => {
+        div.classList.remove('correct', 'incorrect');
+      });
+
+      questions.forEach((q, i) => {
+        const div = document.createElement('div');
+        div.classList.add('question');
+        div.setAttribute('id', `question-${i}`);
+        let optionsHTML = '';
+        q.options.forEach((opt, j) => {
+          optionsHTML += `<label style="display: block; margin: 5px 0;"><input type="radio" name="q${i}" value="${j}" required> ${opt}</label>`;
+        });
+        div.innerHTML = `<p><b>${i + 1}. ${q.q}</b></p>${optionsHTML}`;
+        container.appendChild(div);
+      });
+
+      form.classList.remove('hidden');
+      document.getElementById('result').innerText = '';
+    }
+
+    function gradeTest(event) {
+      event.preventDefault();
+      const difficulty = document.getElementById('difficulty').value;
+      const questions = tests[difficulty];
+      let score = 0;
+
+      questions.forEach((q, i) => {
+        const questionDiv = document.getElementById(`question-${i}`);
+        // Limpiar clases antes de calificar de nuevo
+        questionDiv.classList.remove('correct', 'incorrect');
+
+        const selected = document.querySelector(`input[name="q${i}"]:checked`);
+        if (selected) {
+          const userAnswer = parseInt(selected.value);
+          if (userAnswer === q.answer) {
+            score++;
+            questionDiv.classList.add('correct');
+          } else {
+            questionDiv.classList.add('incorrect');
+          }
+        }
+      });
+
+      const result = document.getElementById('result');
+      const total = questions.length;
+      let message = '';
+      if (score >= total * 0.9) {
+        message = `¡Excelente! Obtuviste ${score}/${total}.`;
+        result.style.color = '#28a745';
+      } else if (score >= total * 0.6) {
+        message = `Vas muy bien, sigue practicando. Obtuviste ${score}/${total}.`;
+        result.style.color = '#fd7e14';
+      } else {
+        message = `Debes seguir practicando. Obtuviste ${score}/${total}.`;
+        result.style.color = '#dc3545';
+      }
+
+      result.innerText = message;
+      window.scrollTo(0, document.body.scrollHeight); // Desplazar hacia abajo para ver el resultado
+      return false;
+    }
+  </script>
+</body>
+</html>
